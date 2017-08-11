@@ -1,0 +1,3 @@
+1. Golf Club:
+    Needs to generate in round menu ("PacesetterRoundMenuDetails")
+    This is already in STANDARD, but it needs to be added to
