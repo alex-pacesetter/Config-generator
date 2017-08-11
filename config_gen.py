@@ -33,13 +33,16 @@ def list_to_dict(info_list):
     return info_dict
 
 
-def create_submenu(tup):
+def create_submenu(tup, code=None):
     title, sub = tup[0], tup[2]
     subs = [title.strip('|')] + [x.strip(',') for x in sub.split('~')]
     new_subs = subs[:1]
     for sub in subs[1:]:
         sub_title = sub.split('|')[0] + '||'
-        new_subs.append(sub_title + '|'.join(sub.split('|')[1:]))
+        if code == 'url':
+            new_subs.append(sub_title + '|' + sub.split('|')[1] + '|' + settings.DEFAULTS[code] + sub.split('|')[2])
+        else:
+            new_subs.append(sub_title + '|'.join(sub.split('|')[1:]))
     return new_subs
 
 
@@ -58,7 +61,9 @@ def to_json(info_dict):
             settings.STANDARD['PacesetterHomeDetails'] = menu
             is_menu = True
         new_v = []
+        to_add_sub = None
         for tup in v:
+            is_submenu = False
             elt = list(filter(None, tup))
             code, *alt = elt[1].split('|')[0].split('~')
             if code in settings.DEFAULTS:
@@ -66,16 +71,20 @@ def to_json(info_dict):
                     elt[1] = code + '|' + settings.DEFAULTS[code] + alt[0]
                 if code != 'url':
                     elt[1] += settings.DEFAULTS[code]
-            elif code == 'submenu':
-                submenu = create_submenu(elt)
-                to_add = list([k])
-                to_add.append(submenu)
-                primary['primary'].append(to_add)
-                is_menu = True
-            new_v.append('|'.join(elt))
+            if code == 'submenu':
+                submenu = create_submenu(elt, elt[2].split('|')[1])
+                to_add_sub = list([k])
+                to_add_sub.append(submenu)
+                is_submenu = True
+            else:
+                new_v.append('|'.join(elt))
         if not is_menu:
-            to_add = list([k]) + new_v
-            primary['primary'].append((to_add))
+            if to_add_sub is not None:
+                to_add = new_v
+                primary['primary'].append((to_add_sub + to_add))
+            else:
+                to_add = list([k]) + new_v
+                primary['primary'].append((to_add))
     # pprint.pprint(info_dict)
     settings.STANDARD['PacesetterMainMenuDetails'] = primary
     # print(json.dumps(settings.STANDARD, indent=4))
