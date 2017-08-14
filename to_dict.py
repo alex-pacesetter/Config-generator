@@ -42,6 +42,7 @@ city_json = """{
         }
     },
     "_HomeDetailsComment": "Supports configuration for main screen of app. Elements are delimited by pipe and are RGBA for X, RGBA for Y, Button title, IGNORED, action, action details. Supports call, url, memberdirectory, map, and startround actions.",
+    "PacesetterHomeDetails": "NONE",
     "PacesetterBackgroundConfig": {
         "should_load": "1",
         "use": "panoramic",
@@ -57,6 +58,7 @@ city_json = """{
             ]
         ]
     },
+    "PacesetterMainMenuDetails": "NONE",
     "_RemoteConfigComment": "This enables remote config. Can't be changed remotely and included only for informational purposes.",
     "PacesetterRemoteConfig": true,
     "PacesetterShowStartRound": false,
@@ -120,7 +122,7 @@ golf_json = """
         }
     },
     "_HomeDetailsComment": "Supports configuration for main screen of app. Elements are delimited by pipe and are RGBA for X, RGBA for Y, Button title, IGNORED, action, action details. Supports call, url, memberdirectory, map, and startround actions.",
-    "PLACEHOLDER_1": "NONE"
+    "PacesetterHomeDetails": "NONE",
     "PacesetterBackgroundConfig": {
         "should_load": "1",
         "use": "panoramic",
@@ -144,7 +146,7 @@ golf_json = """
             ]
         ]
     },
-    "PLACEHOLDER_2": "NONE"
+    "PacesetterMainMenuDetails": "NONE",
     "_RemoteConfigComment": "This enables remote config. Can't be changed remotely and included only for informational purposes.",
     "PacesetterRemoteConfig": true,
     "PacesetterShowStartRound": true,
@@ -162,6 +164,8 @@ golf_json = """
 def standard_dict(key='city'):
     if key == 'city':
         d = json.loads(city_json)
-    else:
+    elif key == 'golf':
         d = json.loads(golf_json)
+    else:
+        exit('No key given for JSON')
     return d

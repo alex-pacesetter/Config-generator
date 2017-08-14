@@ -3,12 +3,24 @@ import json
 import pprint
 from collections import OrderedDict, defaultdict
 import settings
+import to_dict
+
+
+def init_std():
+    _type = input('Type of club? (c or g) ')
+    if _type == 'c':
+        STANDARD = to_dict.standard_dict()
+    else:
+        STANDARD = to_dict.standard_dict('golf')
+    return STANDARD
+
 
 def read_csv(filename):
     with open(filename, encoding='utf-8') as f:
         reader = csv.reader(f)
         all_info = [(title.strip().replace('\ufeff', ''), info.strip(), access.strip(), extra) for title, info, access, *extra in reader]
         return all_info
+
 
 def list_to_dict(info_list):
     info_dict = OrderedDict()
@@ -58,7 +70,7 @@ def to_json(info_dict):
         is_menu = False
         if k.split('[')[0] == 'Menu':
             menu = front_menu(v)
-            settings.STANDARD['PacesetterHomeDetails'] = menu
+            STANDARD['PacesetterHomeDetails'] = menu
             is_menu = True
         new_v = []
         to_add_sub = None
@@ -86,12 +98,14 @@ def to_json(info_dict):
                 to_add = list([k]) + new_v
                 primary['primary'].append((to_add))
     # pprint.pprint(info_dict)
-    settings.STANDARD['PacesetterMainMenuDetails'] = primary
-    # print(json.dumps(settings.STANDARD, indent=4))
-    return json.dumps(settings.STANDARD, indent=4)
+    STANDARD['PacesetterMainMenuDetails'] = primary
+    # print(json.dumps(STANDARD, indent=4))
+    return json.dumps(STANDARD, indent=4)
 
+
+STANDARD = init_std()
 _dict = list_to_dict(read_csv('test_menu.csv'))
-# pprint.pprint(settings.STANDARD)
+# pprint.pprint(STANDARD)
 _json = to_json(_dict)
 with open('out.json', 'w+') as out:
     out.write(_json)
