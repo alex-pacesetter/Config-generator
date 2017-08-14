@@ -86,8 +86,8 @@ venv/
 ENV/
 
 # our files
-.csv
-.json
+*.csv
+*.json
 
 # Spyder project settings
 .spyderproject

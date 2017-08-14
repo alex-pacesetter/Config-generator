@@ -36,14 +36,20 @@ def list_to_dict(info_list):
             continue
         elif info == 'Header':
             if not switched:
-                curr_dict[curr_title + '[v:' + curr_access.lower() + ']'] = curr_tl
+                if curr_access == '':
+                    curr_dict[curr_title] = curr_tl
+                else:
+                    curr_dict[curr_title + '[v:' + curr_access.lower().replace(' ', '') + ']'] = curr_tl
             curr_access = access
             curr_title = title
             curr_tl = []
             switched = False
             continue
         elif info == 'GOLF':
-            curr_dict[curr_title + '[v:' + curr_access.lower() + ']'] = curr_tl
+            if curr_access == '':
+                curr_dict[curr_title] = curr_tl
+            else:
+                curr_dict[curr_title + '[v:' + curr_access.lower().replace(' ', '') + ']'] = curr_tl
             curr_dict = golf_dict
             switched = True
             continue
@@ -64,7 +70,7 @@ def create_submenu(tup, code=None):
     for sub in subs[1:]:
         sub_title = sub.split('|')[0] + '||'
         if code == 'url':
-            new_subs.append(sub_title + '|' + sub.split('|')[1] + '|' + settings.DEFAULTS[code] + sub.split('|')[2])
+            new_subs.append(sub_title + sub.split('|')[1] + '|' + settings.DEFAULTS[code] + sub.split('|')[2])
         else:
             new_subs.append(sub_title + '|'.join(sub.split('|')[1:]))
     return new_subs
@@ -72,11 +78,11 @@ def create_submenu(tup, code=None):
 
 def front_menu(v):
     start = settings.COLORS['box'] + '|' + settings.COLORS['text'] + '|'
-    def_list = [start + ''.join(elt) for elt in v]
+    def_list = [elt[:-1] for elt in [start + '|'.join(elt) for elt in v]]
     return {'default': def_list}
 
 
-def to_json(info_dict, inner='primary', outer='PacesetterMainMenuDetails', key='c'):
+def to_json(info_dict, STANDARD, inner='primary', outer='PacesetterMainMenuDetails', key='c'):
     primary = defaultdict(list)
     for k, v in info_dict.items():
         is_menu = False
@@ -101,8 +107,8 @@ def to_json(info_dict, inner='primary', outer='PacesetterMainMenuDetails', key='
                 to_add_sub.append(submenu)
                 is_submenu = True
             else:
-                if not is_submenu and len(elt) > 2:
-                    to_add = elt[0][:-1] + '[v:{}]||'.format(elt[2].lower()) + '|'.join(elt[1:-1])
+                if not is_submenu and len(elt) > 2 and code != 'url':
+                    to_add = elt[0][:-1] + '[v:{}]||'.format(elt[2].lower()).replace(' ', '') + '|'.join(elt[1:-1])
                     new_v.append(to_add)
                 else:
                     new_v.append('|'.join(elt))
@@ -119,19 +125,28 @@ def to_json(info_dict, inner='primary', outer='PacesetterMainMenuDetails', key='
         STANDARD[outer].update(primary)
     return json.dumps(STANDARD, indent=4)
 
+def main():
+    _type = input('Type of club? (c or g) ').strip()
+    while _type not in {'c','g'}:
+        _type = input("That's not 'c' or 'g'. Type of club? (c or g) ").strip()
+    shortcode = input('Shortcode: ').strip()
+    client_id = input('Client ID: ').strip()
+    longname = input('Name of Club: ').strip()
+    course_id = input('Course ID: ').strip() if _type == 'g' else None
+    STANDARD = init_std(_type)
+    std_dict, golf_dict = list_to_dict(read_csv('test_menu.csv'))
+    std_json = to_json(std_dict, STANDARD)
+    if _type == 'g':
+        golf_json = to_json(golf_dict, STANDARD, 'COURSE_ID_member', 'PacesetterRoundMenuDetails', 'g')
 
-_type = input('Type of club? (c or g) ')
-STANDARD = init_std(_type)
-std_dict, golf_dict = list_to_dict(read_csv('test_menu.csv'))
-# pprint.pprint(std_dict)
-# pprint.pprint(golf_dict)
-# pprint.pprint(STANDARD)
-std_json = to_json(std_dict)
-if _type == 'g':
-    golf_json = to_json(golf_dict, 'COURSE_ID_member', 'PacesetterRoundMenuDetails', 'g')
+    with open('out.json', 'w+') as out:
+        if _type == 'c':
+            updated_json = std_json.replace('SHORTCODE', shortcode).replace('LONGNAME', longname).replace('CLIENT_ID', client_id)
+            out.write(updated_json)
+        elif _type == 'g':
+            updated_json = golf_json.replace('SHORTCODE', shortcode).replace('LONGNAME', longname).replace('CLIENT_ID', client_id).replace('COURSE_ID', course_id)
+            out.write(updated_json)
 
-with open('out.json', 'w+') as out:
-    if _type == 'c':
-        out.write(std_json)
-    elif _type == 'g':
-        out.write(golf_json)
+
+if __name__ == '__main__':
+    main()
