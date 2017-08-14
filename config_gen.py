@@ -6,8 +6,7 @@ import settings
 import to_dict
 
 
-def init_std():
-    _type = input('Type of club? (c or g) ')
+def init_std(_type):
     if _type == 'c':
         STANDARD = to_dict.standard_dict()
     else:
@@ -24,30 +23,38 @@ def read_csv(filename):
 
 def list_to_dict(info_list):
     info_dict = OrderedDict()
+    golf_dict = OrderedDict()
     curr_tl = []
     curr_title = None
     curr_access = None
+    curr_dict = info_dict
+    switched = False
     for title, info, access, extra in info_list:
         if info == 'Front':
             curr_title = title
             curr_access = access
             continue
         elif info == 'Header':
-            print(title, access, curr_tl)
-            info_dict[curr_title + '[v:' + curr_access.lower() + ']'] = curr_tl
+            if not switched:
+                curr_dict[curr_title + '[v:' + curr_access.lower() + ']'] = curr_tl
             curr_access = access
             curr_title = title
             curr_tl = []
+            switched = False
+            continue
+        elif info == 'GOLF':
+            curr_dict[curr_title + '[v:' + curr_access.lower() + ']'] = curr_tl
+            curr_dict = golf_dict
+            switched = True
             continue
         elif info == 'END':
-            info_dict[curr_title] = curr_tl
+            curr_dict[curr_title] = curr_tl
             break
         if info == 'submenu':
             curr_tl.append((title + '|', info, access, ','.join(extra)))
         else:
             curr_tl.append((title + '|', info, access))
-    pprint.pprint(info_dict)
-    return info_dict
+    return info_dict, golf_dict
 
 
 def create_submenu(tup, code=None):
@@ -69,7 +76,7 @@ def front_menu(v):
     return {'default': def_list}
 
 
-def to_json(info_dict):
+def to_json(info_dict, inner='primary', outer='PacesetterMainMenuDetails', key='c'):
     primary = defaultdict(list)
     for k, v in info_dict.items():
         is_menu = False
@@ -94,23 +101,37 @@ def to_json(info_dict):
                 to_add_sub.append(submenu)
                 is_submenu = True
             else:
-                new_v.append('|'.join(elt))
+                if not is_submenu and len(elt) > 2:
+                    to_add = elt[0][:-1] + '[v:{}]||'.format(elt[2].lower()) + '|'.join(elt[1:-1])
+                    new_v.append(to_add)
+                else:
+                    new_v.append('|'.join(elt))
         if not is_menu:
             if to_add_sub is not None:
                 to_add = new_v
-                primary['primary'].append((to_add_sub + to_add))
+                primary[inner].append((to_add_sub + to_add))
             else:
                 to_add = list([k]) + new_v
-                primary['primary'].append((to_add))
-    # pprint.pprint(info_dict)
-    STANDARD['PacesetterMainMenuDetails'] = primary
-    # print(json.dumps(STANDARD, indent=4))
+                primary[inner].append((to_add))
+    if key == 'c':
+        STANDARD[outer] = primary
+    elif key == 'g':
+        STANDARD[outer].update(primary)
     return json.dumps(STANDARD, indent=4)
 
 
-STANDARD = init_std()
-_dict = list_to_dict(read_csv('test_menu.csv'))
+_type = input('Type of club? (c or g) ')
+STANDARD = init_std(_type)
+std_dict, golf_dict = list_to_dict(read_csv('test_menu.csv'))
+# pprint.pprint(std_dict)
+# pprint.pprint(golf_dict)
 # pprint.pprint(STANDARD)
-_json = to_json(_dict)
+std_json = to_json(std_dict)
+if _type == 'g':
+    golf_json = to_json(golf_dict, 'COURSE_ID_member', 'PacesetterRoundMenuDetails', 'g')
+
 with open('out.json', 'w+') as out:
-    out.write(_json)
+    if _type == 'c':
+        out.write(std_json)
+    elif _type == 'g':
+        out.write(golf_json)

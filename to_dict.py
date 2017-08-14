@@ -144,8 +144,7 @@ golf_json = """
                 "Golf",
                 "End Round||endround"
             ]
-        ],
-        "TEST": "NONE"
+        ]
     },
     "PacesetterMainMenuDetails": "NONE",
     "_RemoteConfigComment": "This enables remote config. Can't be changed remotely and included only for informational purposes.",
