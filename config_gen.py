@@ -26,12 +26,16 @@ def list_to_dict(info_list):
     info_dict = OrderedDict()
     curr_tl = []
     curr_title = None
+    curr_access = None
     for title, info, access, extra in info_list:
         if info == 'Front':
             curr_title = title
+            curr_access = access
             continue
         elif info == 'Header':
-            info_dict[curr_title + '[v:' + access.lower() + ']'] = curr_tl
+            print(title, access, curr_tl)
+            info_dict[curr_title + '[v:' + curr_access.lower() + ']'] = curr_tl
+            curr_access = access
             curr_title = title
             curr_tl = []
             continue
@@ -42,6 +46,7 @@ def list_to_dict(info_list):
             curr_tl.append((title + '|', info, access, ','.join(extra)))
         else:
             curr_tl.append((title + '|', info, access))
+    pprint.pprint(info_dict)
     return info_dict
 
 

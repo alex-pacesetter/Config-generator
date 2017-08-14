@@ -8,7 +8,12 @@
     "PacesetterEnableSlowLocations": true,
     "PacesetterMenuBackgroundArt": "SHORTCODE_menu",
     "PacesetterCourseName": "LONGNAME",
-    "PacesetterCourseConfig": {},
+    "PacesetterCourseConfig": {
+        "COURSE_ID": {
+            "FBReminderHole": 8,
+            "FBReminderPosition": "tee"
+        }
+    },
     "PacesetterMenuPriority": [
         "member",
         "staff",
@@ -17,10 +22,12 @@
     "PacesetterCourseNames": [
         "LONGNAME"
     ],
-    "PacesetterCourseIDs": [],
+    "PacesetterCourseIDs": [
+        "COURSE_ID"
+    ],
     "PacesetterGroupConfig": {
         "member": {
-            "IsPOPEnabled": false,
+            "IsPOPEnabled": true,
             "PaymentTypes": "",
             "IsCCEnabled": false
         },
@@ -34,9 +41,9 @@
     },
     "PacesetterLoginDetails": {
         "default": {
-            "cancel": "30,30,30,1",
-            "body": "30,30,30,1",
-            "login": "30,30,30,1"
+            "cancel": "255,255,255,1",
+            "body": "255,255,255,1",
+            "login": "255,255,255,1"
         }
     },
     "_HomeDetailsComment": "Supports configuration for main screen of app. Elements are delimited by pipe and are RGBA for X, RGBA for Y, Button title, IGNORED, action, action details. Supports call, url, memberdirectory, map, and startround actions.",
@@ -54,12 +61,21 @@
         "logo": "150|100|600|SHORTCODE_logo_transparent.png"
     },
     "PacesetterRoundMenuDetails": {
+        "COURSE_ID": [
+            [
+                "Golf",
+                "Weather||url|/web/44/weather",
+                "Notifications||notifications",
+                "End Round||endround"
+            ]
+        ],
         "default": [
             [
                 "Golf",
                 "End Round||endround"
             ]
-        ]
+        ],
+        "TEST": "NONE"
     },
     "PacesetterMainMenuDetails": {
         "primary": [
@@ -89,14 +105,14 @@
                 "Instant Feedback||feedback||instant_feedback",
                 "Events Calendar||url|http://www.madisonclub.org/club-events/club-events/",
                 "Reciprocal Clubs||flexdirectory|reciprocal",
-                "View Statement||signedurl|http://madisonclub.clubhouseonline-e3.com/Statements.aspx"
+                "View Statement||signedurl|http://madisonclub.clubhouseonline-e3.com/Statements.aspx|Staff"
             ],
             [
                 "Reservations[v:member]",
                 "Dining Reservation Request||resource|dining_request"
             ],
             [
-                "Dining On Demand[v:member]",
+                "Dining On Demand[v:staff]",
                 [
                     "To-Go Ordering",
                     "Lunch||fandb|lunch_to_go_order|Sorry, lunch ordering is currently unavailable",
@@ -109,21 +125,31 @@
                 "Weather||url|https://www.wunderground.com/weather-forecast/53703"
             ],
             [
-                "Settings",
+                "Settings[v:member]",
                 "Profile||profile",
-                "Sign Out||signout"
+                "Sign Out||signout",
+                "GOLF||GOLF|GOLF"
+            ],
+            [
+                "Golf",
+                "Member Directory||memberdirectory",
+                "Staff Directory||staffdirectory",
+                "Message the Golf Shop||message|simple|message_golf_shopMessage Us?|Sorry, no one is available. Please call the golf shop.|Message the Golf Shop",
+                "In Round Dining To-Go||fandb|In-Round Dining|to_go_order|Sorry,  this location is currently closed\"",
+                "Notifications||notifications",
+                "End Round||endround"
             ]
         ]
     },
     "_RemoteConfigComment": "This enables remote config. Can't be changed remotely and included only for informational purposes.",
     "PacesetterRemoteConfig": true,
-    "PacesetterShowStartRound": false,
+    "PacesetterShowStartRound": true,
     "PacesetterIsPrivateApp": true,
     "PoweredByPacesetter": true,
     "PacesetterStripeKey": "",
     "PacesetterWelcomeArt": "SHORTCODE_welcome.jpg",
     "PacesetterClientID": "CLIENT_ID",
-    "PacesetterCourseID": "0",
+    "PacesetterCourseID": "COURSE_ID",
     "PacesetterPhoneNumberLink": "tel://",
     "PacesetterTurnhouseArt": ""
 }
