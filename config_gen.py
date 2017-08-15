@@ -63,10 +63,12 @@ def list_to_dict(info_list):
     return info_dict, golf_dict
 
 
-def create_submenu(tup, code=None):
-    title, sub = tup[0], tup[2]
+def create_submenu(tup, code=None, access=False):
+    title, sub = tup[0], tup[-1]
     subs = [title.strip('|')] + [x.strip(',') for x in sub.split('~')]
     new_subs = subs[:1]
+    if access:
+        new_subs[0] += '[v:{}]'.format(tup[-2].lower())
     for sub in subs[1:]:
         sub_title = sub.split('|')[0] + '||'
         if code == 'url':
@@ -80,6 +82,19 @@ def front_menu(v):
     start = settings.COLORS['box'] + '|' + settings.COLORS['text'] + '|'
     def_list = [elt[:-1] for elt in [start + '|'.join(elt) for elt in v]]
     return {'default': def_list}
+
+
+def create_more_courses(course_id, STANDARD):
+    pcc = {"FBReminderHole": 8, "FBReminderPosition": "tee"}
+    prmd = ["Golf", "Weather||url|/web/CLIENT_ID/weather", "Notifications||notifications", "End Round||endround"]
+    menu = STANDARD['PacesetterRoundMenuDetails']['COURSE_ID_member']
+    for course in course_id[1:]:
+        STANDARD['PacesetterCourseConfig'].update({course:pcc})
+        STANDARD['PacesetterCourseIDs'].append(course)
+        STANDARD['PacesetterRoundMenuDetails'].update({course:[prmd]})
+        s_course = str(course) + '_member'
+        STANDARD['PacesetterRoundMenuDetails'].update({s_course:menu})
+    return json.dumps(STANDARD, indent=4)
 
 
 def to_json(info_dict, STANDARD, inner='primary', outer='PacesetterMainMenuDetails', key='c'):
@@ -102,7 +117,7 @@ def to_json(info_dict, STANDARD, inner='primary', outer='PacesetterMainMenuDetai
                 if code != 'url':
                     elt[1] += settings.DEFAULTS[code]
             if code == 'submenu':
-                submenu = create_submenu(elt, elt[2].split('|')[1])
+                submenu = create_submenu(elt, elt[-1].split('|')[1], len(elt) == 4)
                 to_add_sub = list([k])
                 to_add_sub.append(submenu)
                 is_submenu = True
@@ -132,12 +147,18 @@ def main():
     shortcode = input('Shortcode: ').strip()
     client_id = input('Client ID: ').strip()
     longname = input('Name of Club: ').strip()
-    course_id = input('Course ID: ').strip() if _type == 'g' else None
+    course_id = input('Course ID (Comma separated): ').split(',') if _type == 'g' else None
     STANDARD = init_std(_type)
     std_dict, golf_dict = list_to_dict(read_csv('test_menu.csv'))
     std_json = to_json(std_dict, STANDARD)
     if _type == 'g':
         golf_json = to_json(golf_dict, STANDARD, 'COURSE_ID_member', 'PacesetterRoundMenuDetails', 'g')
+
+    if course_id and len(course_id) == 1:
+        course_id = course_id[0]
+    elif course_id:
+        golf_json = create_more_courses(course_id, STANDARD)
+        course_id = course_id[0]
 
     with open('out.json', 'w+') as out:
         if _type == 'c':

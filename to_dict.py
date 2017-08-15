@@ -134,7 +134,7 @@ golf_json = """
         "COURSE_ID": [
             [
                 "Golf",
-                "Weather||url|/web/44/weather",
+                "Weather||url|/web/CLIENT_ID/weather",
                 "Notifications||notifications",
                 "End Round||endround"
             ]
