@@ -89,6 +89,7 @@ ENV/
 *.csv
 *.json
 *.txt
+*.xlsx
 
 # Spyder project settings
 .spyderproject

@@ -118,13 +118,18 @@ def to_json(info_dict, STANDARD, inner='primary', outer='PacesetterMainMenuDetai
                     elt[1] += settings.DEFAULTS[code]
             if code == 'submenu':
                 submenu = create_submenu(elt, elt[-1].split('|')[1], len(elt) == 4)
-                to_add_sub = list([k])
+                # Fixes bug where only one submenu per header worked
+                if not to_add_sub:
+                    to_add_sub = list([k])
                 to_add_sub.append(submenu)
                 is_submenu = True
             else:
                 if not is_submenu and len(elt) > 2 and code != 'url':
                     to_add = elt[0][:-1] + '[v:{}]||'.format(elt[2].lower()).replace(' ', '') + '|'.join(elt[1:-1])
                     new_v.append(to_add)
+                elif len(elt) > 2:
+                    elt[0] = elt[0][:-1] + '[v:{}]|'.format(elt[-1].lower())
+                    new_v.append('|'.join(elt[:-1]))
                 else:
                     new_v.append('|'.join(elt))
         if not is_menu:
@@ -149,7 +154,7 @@ def main():
     longname = input('Name of Club: ').strip()
     course_id = input('Course ID (Comma separated): ').split(',') if _type == 'g' else None
     STANDARD = init_std(_type)
-    std_dict, golf_dict = list_to_dict(read_csv('test_menu.csv'))
+    std_dict, golf_dict = list_to_dict(read_csv('real_menu_test.csv'))
     std_json = to_json(std_dict, STANDARD)
     if _type == 'g':
         golf_json = to_json(golf_dict, STANDARD, 'COURSE_ID_member', 'PacesetterRoundMenuDetails', 'g')
