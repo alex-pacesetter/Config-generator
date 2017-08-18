@@ -30,7 +30,26 @@ def init_std(_type):
     return STANDARD
 
 
-def read_csv(filename): # TODO: add in a validator
+def validate(all_info, key='c'):
+    """
+    Take in the resulting list from the csv and make sure it is in correct format. Correct format entails:
+        1. First entry is (*,Front,*,[*])
+        2. Ends in END
+        3. If golf -> Needs GOLF else -> no GOLF
+        4. if code == submenu -> needs a submenu
+        5. Make sure codes match?
+    """
+    # print(all_info)
+    front = (all_info[0][1].lower() == 'front', 'Does not start with Front')
+    end = (all_info[-1][0].lower() == 'end', 'Does not end with END')
+    end_tuples = [x[1].lower() for x in all_info]
+    golf = ('golf' in end_tuples if key == 'g' else 'golf' not in end_tuples, 'Either given type golf with no golf menu, or given type city with a golf menu')
+    submenu = (all([x[3] != [''] for x in all_info if x[1] == 'submenu']), 'Submenu code with no corresponding submenu given')
+    returns = [front, end, golf, submenu]
+    return [x for x in returns if not x[0]]
+
+
+def read_csv(filename, _type): # TODO: add in a validator
     """
     Read in the csv file and preprocess the data.
     """
@@ -40,7 +59,8 @@ def read_csv(filename): # TODO: add in a validator
         # where extra implies everything else. Could be nothing or
         # could be 3 columns depending on the type
         all_info = [(title.strip().replace('\ufeff', ''), info.strip(), access.strip(), extra) for title, info, access, *extra in reader]
-        return all_info
+        bad_list = validate(all_info, _type)
+        return all_info if not bad_list else exit('Error: ' + '\nError: '.join([warning for _, warning in bad_list]))
 
 
 def list_to_dict(info_list):
@@ -153,6 +173,7 @@ def create_more_courses(course_id, STANDARD):
     # The indent is only there to make printing look pretty
     return json.dumps(STANDARD, indent=4)
 
+
 def to_json(info_dict, STANDARD, inner='primary', outer='PacesetterMainMenuDetails', key='c'):
     """
     HOOOOOO BOYYYYYYY. Welcome to some ~ugly~ code up in here. It could be much much cleaner, but real life has gotten in the way of my once beautiful code. This function takes in:
@@ -218,11 +239,12 @@ def to_json(info_dict, STANDARD, inner='primary', outer='PacesetterMainMenuDetai
         STANDARD[outer].update(primary)
     return json.dumps(STANDARD, indent=4)  # return and make it pretty!
 
+
 def main():
     # We need to know if its a golf or city club to load the right config
     # ****IMPORTANT: Should only be a golf club if there is a GOLF section in the app. Otherwise it does not need to golf config****
     _type = input('Type of club? (c or g): ').strip()
-    while _type not in {'c','g'}:  # Make sure its the right code
+    while _type not in {'c', 'g'}:  # Make sure its the right code
         _type = input("That's not 'c' or 'g'. Type of club? (c or g) ").strip()
 
     # Codes we have as placeholders to add in
@@ -238,7 +260,7 @@ def main():
     filename = input('Full path to file from {}: '.format(CWD))
 
     # read in the file, load it from a list into a dict for easier parsing
-    std_dict, golf_dict = list_to_dict(read_csv(filename))
+    std_dict, golf_dict = list_to_dict(read_csv(filename, _type))
 
     # do the standard updates to config
     std_json = to_json(std_dict, STANDARD)
@@ -264,6 +286,7 @@ def main():
             out.write(updated_json)
 
     return 'Output file is: {}'.format('out.json')  # One config, please!
+
 
 if __name__ == '__main__':  # You already know what's going on
     main()
