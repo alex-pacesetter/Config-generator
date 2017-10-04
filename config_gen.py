@@ -13,6 +13,7 @@ from collections import OrderedDict, defaultdict
 import settings
 import to_dict
 import os
+import sys
 
 
 CWD = os.getcwd()
@@ -60,7 +61,7 @@ def read_csv(filename, _type): # TODO: add in a validator
         # could be 3 columns depending on the type
         all_info = [(title.strip().replace('\ufeff', ''), info.strip(), access.strip(), extra) for title, info, access, *extra in reader]
         bad_list = validate(all_info, _type)
-        return all_info if not bad_list else exit('Error: ' + '\nError: '.join([warning for _, warning in bad_list]))
+        return all_info if not bad_list else sys.exit('Error: ' + '\nError: '.join([warning for _, warning in bad_list]))
 
 
 def list_to_dict(info_list):
@@ -259,6 +260,9 @@ def main():
     # get the file
     filename = input('Full path to file from {}: '.format(CWD))
 
+    file_dir = '/'.join(filename.split('/')[:-1]) # directory where csv file is
+    out_file = os.path.join(file_dir, 'out.json')
+
     # read in the file, load it from a list into a dict for easier parsing
     std_dict, golf_dict = list_to_dict(read_csv(filename, _type))
 
@@ -277,7 +281,7 @@ def main():
         course_id = course_id[0]  # Still need just the first one 4 placeholders
 
     # open the out file, write our B-E-A-U-tiful config to it
-    with open('out.json', 'w+') as out:
+    with open(out_file, 'w+') as out:
         if _type == 'c':  # if its a city type -> write standard json
             updated_json = std_json.replace('SHORTCODE', shortcode).replace('LONGNAME', longname).replace('CLIENT_ID', client_id)  # replace placeholders
             out.write(updated_json)
@@ -285,7 +289,7 @@ def main():
             updated_json = golf_json.replace('SHORTCODE', shortcode).replace('LONGNAME', longname).replace('CLIENT_ID', client_id).replace('COURSE_ID', course_id)  # replace placeholders
             out.write(updated_json)
 
-    return 'Output file is: {}'.format('out.json')  # One config, please!
+    return 'Output file is: {}'.format(out_file)  # One config, please!
 
 
 if __name__ == '__main__':  # You already know what's going on
