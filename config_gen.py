@@ -14,6 +14,10 @@ import settings
 import to_dict
 import os
 import sys
+import tkinter
+import tkinter as tk
+from tkinter.messagebox import showinfo
+from tkinter.filedialog import askopenfile
 
 
 CWD = os.getcwd()
@@ -240,6 +244,54 @@ def to_json(info_dict, STANDARD, inner='primary', outer='PacesetterMainMenuDetai
         STANDARD[outer].update(primary)
     return json.dumps(STANDARD, indent=4)  # return and make it pretty!
 
+def run_from_tkinter(_type, shortcode, client_id, longname, course_id, filename):
+    # We need to know if its a golf or city club to load the right config
+    # ****IMPORTANT: Should only be a golf club if there is a GOLF section in the app. Otherwise it does not need to golf config****
+    _type = _type.strip()
+    shortcode = shortcode.strip()
+    client_id = client_id.strip()
+    longname = longname.strip()
+    course_id = course_id.split(',') if _type == 'g' else None
+
+    # load the 'standard' config depending on club type
+    STANDARD = init_std(_type)
+
+    # get the file
+    filename = filename.strip()
+    errors = []
+    if not os.path.exists(filename):
+        errors.append('File does not exist. Please check path')
+
+    file_dir = '/'.join(filename.split('/')[:-1]) # directory where csv file is
+    out_file = os.path.join(file_dir, 'out.json')
+
+    # read in the file, load it from a list into a dict for easier parsing
+    std_dict, golf_dict = list_to_dict(read_csv(filename, _type))
+
+    # do the standard updates to config
+    std_json = to_json(std_dict, STANDARD)
+
+    # if its a golf club, we'll have generated extra in-round we need to add
+    if _type == 'g':
+        golf_json = to_json(golf_dict, STANDARD, 'COURSE_ID_member', 'PacesetterRoundMenuDetails', 'g')
+
+    # convert from list to string if its just one course
+    if course_id and len(course_id) == 1:
+        course_id = course_id[0]
+    elif course_id:  # We need to create the config for the extra courses
+        golf_json = create_more_courses(course_id, STANDARD)
+        course_id = course_id[0]  # Need just the first one for placeholders
+
+    # open the out file, write our B-E-A-U-tiful config to it
+    with open(out_file, 'w+') as out:
+        if _type == 'c':  # if its a city type -> write standard json
+            updated_json = std_json.replace('SHORTCODE', shortcode).replace('LONGNAME', longname).replace('CLIENT_ID', client_id)  # replace placeholders
+            out.write(updated_json)
+        elif _type == 'g':  # if its a golf type -> write golf json
+            updated_json = golf_json.replace('SHORTCODE', shortcode).replace('LONGNAME', longname).replace('CLIENT_ID', client_id).replace('COURSE_ID', course_id)  # replace placeholders
+            out.write(updated_json)
+
+    return out_file, errors  # One config, please!
 
 def main():
     # We need to know if its a golf or city club to load the right config
@@ -293,4 +345,104 @@ def main():
 
 
 if __name__ == '__main__':  # You already know what's going on
-    main()
+
+    class Application(tk.Frame):
+        def __init__(self, master=None):
+            super().__init__(master)
+            self.pack()
+            self.create_widgets()
+
+        def create_widgets(self):
+            self.tlabel = tk.StringVar()
+            self.tlabel.set('Type of Club:')
+            self.type_label = tk.Label(self, textvariable=self.tlabel)
+            self.type_label.pack(side='left')
+            self.t_value = tk.IntVar()
+            self.type_g = tk.Radiobutton(self, text='Golf', variable=self.t_value, value=True)
+            self.type_c = tk.Radiobutton(self, text='City', variable=self.t_value, value=False)
+            self.type_g.pack(side='left')
+            self.type_c.pack(side='left')
+            self.type_label.grid(row=0, column=0)
+            self.type_g.grid(row=0, column=1)
+            self.type_c.grid(row=0, column=2)
+
+            self.slabel = tk.StringVar()
+            self.slabel.set('Shortcode:')
+            self.short_label = tk.Label(self, textvariable=self.slabel)
+            self.short_label.pack(side='left')
+            self.shortcode = tk.Entry(self)
+            self.shortcode.pack(side='left')
+            self.short_label.grid(row=1, column=0)
+            self.shortcode.grid(row=1, column=1)
+
+            self.cidlabel = tk.StringVar()
+            self.cidlabel.set('Client ID:')
+            self.cid_label = tk.Label(self, textvariable=self.cidlabel)
+            self.cid_label.pack(side='left')
+            self.cid = tk.Entry(self)
+            self.cid.pack(side='left')
+            self.cid_label.grid(row=2, column=0)
+            self.cid.grid(row=2, column=1)
+
+
+            self.nclabel = tk.StringVar()
+            self.nclabel.set('Name of Club:')
+            self.nc_label = tk.Label(self, textvariable=self.nclabel)
+            self.nc_label.pack(side='left')
+            self.nc = tk.Entry(self)
+            self.nc.pack(side='left')
+            self.nc_label.grid(row=3, column=0)
+            self.nc.grid(row=3, column=1)
+
+            self.courseslabel = tk.StringVar()
+            self.courseslabel.set('Course ID (Comma separated):')
+            self.courses_label = tk.Label(self, textvariable=self.courseslabel)
+            self.courses_label.pack(side='left')
+            self.courses = tk.Entry(self, textvariable=tk.StringVar(None))
+            self.courses.pack(side='left')
+            self.courses_label.grid(row=4, column=0)
+            self.courses.grid(row=4, column=1)
+
+
+            self.pathlabel = tk.StringVar()
+            self.pathlabel.set('Please choose file:')
+            self.path_label = tk.Label(self, textvariable=self.pathlabel)
+            self.path_label.pack(side='left')
+            self.path_label.grid(row=5, column=0)
+            self.path_button =tk.Button(self, text='Choose File', command=self.openfile)
+            self.path_button.pack(side='left')
+            self.path_button.grid(row=5, column=1)
+
+            self.submit = tk.Button(self, text="Submit", command=self.run)
+            self.submit.pack(side="bottom")
+            self.submit.grid(row=6, column=1)
+
+            self.quit = tk.Button(self, text='Quit', command=root.quit)
+            self.quit.pack(side="bottom")
+            self.quit.grid(row=6, column=2)
+
+        def openfile(self):
+            self.path = askopenfile()
+            self.opened_file = tk.StringVar()
+            self.opened_file.set('Opened File: {}'.format(self.path.name))
+            self.file_label = tk.Label(self, textvariable=self.opened_file)
+            self.file_label.pack(side='left')
+            self.file_label.grid(row=5, column=2)
+
+        def validate(self, _type):
+            return True if _type in {'c', 'g'} else False
+
+        def run(self):
+            _type = 'g' if self.t_value else 'c'
+            shortcode = self.shortcode.get()
+            client_id = self.cid.get()
+            longname = self.nc.get()
+            course_id = self.courses.get()
+            filename = self.path.name
+            out, errors = run_from_tkinter(_type, shortcode, client_id, longname, course_id, filename)
+            showinfo('Window', 'File located at: {}'.format(out))
+
+
+    root = tk.Tk()
+    app = Application(master=root)
+    app.mainloop()
