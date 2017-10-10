@@ -16,7 +16,7 @@ import os
 import sys
 import tkinter
 import tkinter as tk
-from tkinter.messagebox import showinfo
+from tkinter.messagebox import showinfo, showerror
 from tkinter.filedialog import askopenfile
 
 
@@ -54,7 +54,7 @@ def validate(all_info, key='c'):
     return [x for x in returns if not x[0]]
 
 
-def read_csv(filename, _type): # TODO: add in a validator
+def read_csv(filename, _type):
     """
     Read in the csv file and preprocess the data.
     """
@@ -65,7 +65,7 @@ def read_csv(filename, _type): # TODO: add in a validator
         # could be 3 columns depending on the type
         all_info = [(title.strip().replace('\ufeff', ''), info.strip(), access.strip(), extra) for title, info, access, *extra in reader]
         bad_list = validate(all_info, _type)
-        return all_info if not bad_list else sys.exit('Error: ' + '\nError: '.join([warning for _, warning in bad_list]))
+        return all_info, [warning for _, warning in bad_list]
 
 
 def list_to_dict(info_list):
@@ -261,12 +261,18 @@ def run_from_tkinter(_type, shortcode, client_id, longname, course_id, filename)
     errors = []
     if not os.path.exists(filename):
         errors.append('File does not exist. Please check path')
+        return None, errors
 
     file_dir = '/'.join(filename.split('/')[:-1]) # directory where csv file is
     out_file = os.path.join(file_dir, 'out.json')
 
     # read in the file, load it from a list into a dict for easier parsing
-    std_dict, golf_dict = list_to_dict(read_csv(filename, _type))
+    all_info, csv_errors = read_csv(filename, _type)
+    # check for errors
+    if csv_errors:
+        errors.extend(csv_errors)
+        return None, errors
+    std_dict, golf_dict = list_to_dict(all_info)
 
     # do the standard updates to config
     std_json = to_json(std_dict, STANDARD)
@@ -440,7 +446,10 @@ if __name__ == '__main__':  # You already know what's going on
             course_id = self.courses.get()
             filename = self.path.name
             out, errors = run_from_tkinter(_type, shortcode, client_id, longname, course_id, filename)
-            showinfo('Window', 'File located at: {}'.format(out))
+            if len(errors) > 0:
+                showerror('ERROR', '\n'.join([x for x in errors]))
+            else:
+                showinfo('Window', 'File located at: {}'.format(out))
 
 
     root = tk.Tk()

@@ -152,6 +152,7 @@ golf_json = """
     "PacesetterShowStartRound": true,
     "PacesetterIsPrivateApp": true,
     "PoweredByPacesetter": true,
+    "PacesetterHomeArt": "SHORTCODE_in_round.jpg",
     "PacesetterStripeKey": "",
     "PacesetterWelcomeArt": "SHORTCODE_welcome.jpg",
     "PacesetterClientID": "CLIENT_ID",
